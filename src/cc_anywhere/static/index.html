@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CC-Anywhere</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>CC-Anywhere</h1>
+            <div class="header-actions">
+                <button id="btn-history" class="btn btn-icon" title="Session History">📋</button>
+                <button id="btn-discover" class="btn btn-icon" title="Discover WezTerm Panes">🔍</button>
+                <button id="btn-clear-all" class="btn btn-icon" title="Clear All Sessions">🗑️</button>
+                <button id="btn-new-session" class="btn btn-primary">+ New</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Session Tiles -->
+            <div class="sessions-panel">
+                <div id="session-tiles" class="session-tiles">
+                    <!-- Session tiles will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Terminal Panel -->
+            <div class="terminal-panel">
+                <!-- Fullscreen session bar (visible only in fullscreen mode) -->
+                <div id="fullscreen-sessions-bar" class="fullscreen-sessions-bar">
+                    <div id="fullscreen-session-chips" class="fullscreen-session-chips">
+                        <!-- Session chips will be inserted here -->
+                    </div>
+                    <button class="fullscreen-exit-btn" id="btn-fullscreen-exit" title="Exit Fullscreen">축소</button>
+                </div>
+                <div class="terminal-header">
+                    <div class="terminal-actions">
+                        <button id="btn-refresh" class="btn btn-icon" disabled title="Refresh">↻</button>
+                        <button id="btn-delete" class="btn btn-danger" disabled title="Delete Session">✕</button>
+                    </div>
+                    <div class="terminal-title-area">
+                        <span id="terminal-title">Select a session</span>
+                        <span id="connection-status" class="connection-status"></span>
+                    </div>
+                    <!-- 모바일 전용 컨트롤 -->
+                    <div class="terminal-mobile-controls">
+                        <button class="btn btn-icon" id="btn-font-down" title="Smaller">−</button>
+                        <span class="font-size-label" id="font-size-label">8</span>
+                        <button class="btn btn-icon" id="btn-font-up" title="Larger">+</button>
+                        <button class="btn btn-icon" id="btn-mobile-refresh" title="Refresh">↻</button>
+                        <button class="btn btn-icon" id="btn-fullscreen" title="Fullscreen">⛶</button>
+                    </div>
+                </div>
+                <div id="terminal-container" class="terminal-container">
+                    <div id="terminal"></div>
+                </div>
+                <!-- Chat mode view (hidden by default) -->
+                <div id="chat-container" class="chat-container hidden">
+                    <div id="chat-messages" class="chat-messages"></div>
+                </div>
+                <!-- Mobile special keys toolbar -->
+                <div class="mobile-keys-bar">
+                    <div class="keys-row">
+                        <select id="slash-command-dropdown" class="slash-dropdown" title="Recent commands">
+                            <option value="">⚡</option>
+                        </select>
+                        <button class="key-btn accent wide" data-key="Enter">Enter</button>
+                        <button class="key-btn accent wide" data-key="S-Tab">⇧Tab</button>
+                        <button class="key-btn" data-key="Tab">Tab</button>
+                        <button class="key-btn" data-key="Escape">ESC</button>
+                        <button class="key-btn" data-key="C-c">^C</button>
+                        <button class="key-btn" data-key="Up">↑</button>
+                        <button class="key-btn" data-key="Down">↓</button>
+                        <button class="key-btn" data-key="Left">←</button>
+                        <button class="key-btn" data-key="Right">→</button>
+                    </div>
+                </div>
+                <!-- Mobile input for IME support (Korean, Japanese, etc.) -->
+                <div class="mobile-input-bar">
+                    <input type="text" id="mobile-input" class="mobile-input-field" placeholder="입력 후 Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send">
+                </div>
+            </div>
+        </div>
+
+        <!-- New Session Modal -->
+        <div id="modal-new-session" class="modal hidden">
+            <div class="modal-content">
+                <h2>New Session</h2>
+                <form id="form-new-session">
+                    <div class="form-group">
+                        <label for="session-name">Session Name</label>
+                        <div class="name-input-row">
+                            <input type="text" id="session-name" required placeholder="my-project">
+                            <button type="button" class="btn btn-icon" id="btn-refresh-name" title="Generate new name">🎲</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Working Directory</label>
+                        <div class="dir-input-row">
+                            <input type="text" id="working-dir" placeholder="~ (default)" readonly>
+                            <button type="button" class="btn btn-icon" id="btn-browse-dir" title="Browse">📁</button>
+                        </div>
+                        <!-- Favorites -->
+                        <div class="dir-section">
+                            <div class="dir-section-header">
+                                <span>⭐ Favorites</span>
+                                <button type="button" class="btn-link" id="btn-add-favorite" title="Add current to favorites">+ Add</button>
+                            </div>
+                            <div id="favorites-list" class="dir-list">
+                                <!-- Favorites will be populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Git Worktree Option (shown only for Git repos) -->
+                    <div class="form-group git-options hidden" id="git-options">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="create-worktree" name="create-worktree">
+                            <label for="create-worktree">Create Git Worktree</label>
+                        </div>
+                        <div class="worktree-branch-row hidden" id="worktree-branch-row">
+                            <label for="worktree-branch">Branch name</label>
+                            <input type="text" id="worktree-branch" placeholder="auto-generated">
+                            <div class="checkbox-row">
+                                <input type="checkbox" id="cleanup-worktree" name="cleanup-worktree" checked>
+                                <label for="cleanup-worktree">Cleanup on session delete</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn" id="btn-cancel-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Directory Browser Modal -->
+        <div id="modal-dir-browser" class="modal hidden">
+            <div class="modal-content">
+                <h2>Select Directory</h2>
+                <div class="dir-browser">
+                    <div class="dir-browser-path">
+                        <button type="button" class="btn btn-icon" id="btn-dir-up" title="Go up">⬆️</button>
+                        <span id="current-path">~</span>
+                    </div>
+                    <div id="dir-browser-list" class="dir-browser-list">
+                        <!-- Directories will be populated by JS -->
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn" id="btn-cancel-dir-browser">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-select-dir">Select</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discover Modal -->
+        <div id="modal-discover" class="modal hidden">
+            <div class="modal-content modal-wide">
+                <h2>Discover WezTerm Panes</h2>
+                <div id="discover-list" class="discover-list">
+                    <p>Loading...</p>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn" id="btn-close-discover">Close</button>
+                    <button type="button" class="btn btn-primary" id="btn-import-all">Import All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div id="modal-history" class="modal hidden">
+            <div class="modal-content modal-wide">
+                <h2>Session History</h2>
+                <div id="history-sessions" class="history-sessions">
+                    <p>Loading...</p>
+                </div>
+                <div id="history-entries" class="history-entries hidden">
+                    <div class="history-header">
+                        <button type="button" class="btn btn-small" id="btn-history-back">← Back</button>
+                        <span id="history-session-name"></span>
+                    </div>
+                    <div id="history-content" class="history-content"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn" id="btn-close-history">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# CC-Anywhere Configuration
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  # HTTPS 설정 (선택사항)
+  # mkcert 사용: brew install mkcert && mkcert -install && mkcert -key-file certs/key.pem -cert-file certs/cert.pem localhost
+  # Self-signed: openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=localhost"
+  ssl:
+    enabled: false
+    keyfile: "certs/key.pem"
+    certfile: "certs/cert.pem"
+
+claude:
+  command: "claude"
+  args: ["--dangerously-skip-permissions"]
+  default_working_dir: "~"
+
+sessions:
+  max_sessions: 10
+  idle_timeout_minutes: 60
+  auto_restart_on_freeze: true
+
+logging:
+  level: "DEBUG"
+  file: "~/.cc-anywhere/logs/cc-anywhere.log"
+  max_size_mb: 10
+  backup_count: 5
+
+backup:
+  enabled: true
+  interval_hours: 24
+  path: "~/.cc-anywhere/backups"
+
+# Messenger bot settings (tokens in .env)
+discord:
+  enabled: true
+  allowed_user_ids: []
+  # Channels where messages work without slash commands
+  # Private channels automatically allow direct messages
+  # Add specific channel IDs here for additional channels
+  allowed_channel_ids: []
+  command_prefix: "/cc"
+
+telegram:
+  enabled: false
+  allowed_user_ids: []
+
+slack:
+  enabled: false
+  allowed_user_ids: []
